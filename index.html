@@ -121,6 +121,10 @@
   <button onclick="recordMiss()">Miss</button>
 </div>
 
+<div id="statusText" style="margin-top:10px; font-size:18px; font-weight:bold;">
+  Draw a trick to begin
+</div>
+
 <button id="newMatchBtn" onclick="newMatch()">New Match</button>
 
 <script>
@@ -146,74 +150,82 @@ let availableTricks = [...tricks];
 let scoreA = 0;
 let scoreB = 0;
 let setter = "A";
-let attemptHistory = [];
+let turn = "A";
 let currentTrick = null;
-let turn = "A"; // whose attempt it is
+let attemptHistory = [];
 
 function updateBorder() {
   document.getElementById("currentTrickBox").style.borderColor = setter === "A" ? "red" : "blue";
+}
+
+function updateStatus(text) {
+  document.getElementById("statusText").innerText = text;
 }
 
 function drawTrick() {
   if (availableTricks.length === 0) return;
   const idx = Math.floor(Math.random() * availableTricks.length);
   currentTrick = availableTricks.splice(idx, 1)[0];
+
   document.getElementById("currentTrick").innerText = currentTrick;
   document.getElementById("setterLine").innerText = `Setter: Player ${setter}`;
+
   attemptHistory = [];
   turn = setter;
   updateBorder();
+  updateStatus(`Player ${setter} chance to set`);
 }
 
 function recordMake() {
+  if (!currentTrick) return;
   attemptHistory.push({ player: turn, result: "make" });
   processAttempt();
 }
 
 function recordMiss() {
+  if (!currentTrick) return;
   attemptHistory.push({ player: turn, result: "miss" });
   processAttempt();
 }
 
 function processAttempt() {
-  if (!currentTrick) return;
+  const a = attemptHistory;
+  const opponent = turn === "A" ? "B" : "A";
 
-  if (attemptHistory.length === 1) {
-    if (attemptHistory[0].result === "miss") {
-      turn = setter === "A" ? "B" : "A";
-      return;
+  if (a.length === 1) {
+    if (a[0].result === "make") {
+      turn = opponent;
+      updateStatus(`Player ${opponent} chance to match`);
+    } else {
+      turn = opponent;
+      updateStatus(`Player ${opponent} chance for point`);
     }
-    turn = setter === "A" ? "B" : "A";
     return;
   }
 
-  if (attemptHistory.length === 2) {
-    const a1 = attemptHistory[0];
-    const a2 = attemptHistory[1];
+  if (a.length === 2) {
+    const p1 = a[0].result;
+    const p2 = a[1].result;
 
-    if (a1.result === "miss" && a2.result === "make") {
-      awardPoint(turn);
+    if (p1 === "make" && p2 === "miss") {
+      awardPoint(setter);
       return;
     }
-
-    if (a1.result === "make" && a2.result === "make") {
-      turn = setter;
+    if (p1 === "miss" && p2 === "make") {
+      awardPoint(opponent);
       return;
     }
-
-    middlePile(currentTrick);
-    endSet();
-    return;
+    if ((p1 === "make" && p2 === "make") || (p1 === "miss" && p2 === "miss")) {
+      retrySet();
+      return;
+    }
   }
+}
 
-  if (attemptHistory.length === 3) {
-    if (attemptHistory[2].result === "make") {
-      awardPoint(turn);
-      return;
-    }
-    middlePile(currentTrick);
-    endSet();
-  }
+function retrySet() {
+  updateStatus(`Player ${setter} chance to set`);
+  attemptHistory = [];
+  turn = setter;
 }
 
 function awardPoint(player) {
@@ -230,17 +242,10 @@ function awardPoint(player) {
   pile.appendChild(card);
 
   endSet();
-
   setter = setter === "A" ? "B" : "A";
+  document.getElementById("setterLine").innerText = `Setter: Player ${setter}`;
+  updateBorder();
   checkWin();
-}
-
-function middlePile(cardText) {
-  const mid = document.getElementById("middleCards");
-  const card = document.createElement("div");
-  card.className = "card";
-  card.innerText = cardText;
-  mid.appendChild(card);
 }
 
 function endSet() {
@@ -257,23 +262,21 @@ function checkWin() {
 function newMatch() {
   scoreA = 0;
   scoreB = 0;
+  setter = "A";
+  turn = "A";
+  availableTricks = [...tricks];
+  attemptHistory = [];
+  currentTrick = null;
+
   document.getElementById("scoreA").innerText = 0;
   document.getElementById("scoreB").innerText = 0;
-
   document.getElementById("cardsA").innerHTML = "";
   document.getElementById("cardsB").innerHTML = "";
   document.getElementById("middleCards").innerHTML = "";
-
-  availableTricks = [...tricks];
-  setter = "A";
-  turn = "A";
-  currentTrick = null;
-  attemptHistory = [];
-
-  document.getElementById("currentTrick").innerText = "Draw Trick";
-  document.getElementById("setterLine").innerText = "Setter: Player A";
   document.getElementById("newMatchBtn").style.display = "none";
+
   updateBorder();
+  updateStatus("Draw a trick to begin");
 }
 </script>
 </body>

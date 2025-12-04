@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Kendama Open Comp Judge</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background: #f4f4f4;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .scoreboard {
+    width: 95%;
+    max-width: 600px;
+    display: flex;
+    justify-content: space-between;
+    margin-top: 20px;
+  }
+
+  .player {
+    width: 48%;
+    background: white;
+    padding: 10px;
+    border-radius: 10px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  }
+
+  .player h2 { margin: 0; text-align: center; }
+  .score { font-size: 40px; text-align: center; margin: 10px 0; }
+
+  .cards {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    min-height: 40px;
+  }
+
+  .card {
+    padding: 6px;
+    background: #ddd;
+    border-radius: 6px;
+    font-size: 14px;
+  }
+
+  #currentTrickBox {
+    margin-top: 20px;
+    width: 95%;
+    max-width: 600px;
+    padding: 15px;
+    background: white;
+    text-align: center;
+    border-radius: 10px;
+    border: 4px solid black;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  }
+
+  #currentTrick { font-size: 22px; font-weight: bold; }
+
+  .buttons {
+    margin-top: 20px;
+    display: flex;
+    gap: 20px;
+  }
+
+  button {
+    padding: 15px 25px;
+    font-size: 18px;
+    border: none;
+    border-radius: 10px;
+    background: #007bff;
+    color: white;
+    cursor: pointer;
+  }
+
+  button:active { opacity: 0.8; }
+
+  #newMatchBtn {
+    margin-top: 25px;
+    background: #28a745;
+    display: none;
+  }
+
+  #middleCards {
+    margin-top: 15px;
+    font-size: 16px;
+    min-height: 30px;
+  }
+</style>
+</head>
+<body>
+
+<div class="scoreboard">
+  <div class="player" id="playerABox">
+    <h2>Player A</h2>
+    <div class="score" id="scoreA">0</div>
+    <div class="cards" id="cardsA"></div>
+  </div>
+
+  <div class="player" id="playerBBox">
+    <h2>Player B</h2>
+    <div class="score" id="scoreB">0</div>
+    <div class="cards" id="cardsB"></div>
+  </div>
+</div>
+
+<div id="currentTrickBox">
+  <div id="setterLine">Setter: Player A</div>
+  <div id="currentTrick">Press Draw Trick</div>
+</div>
+
+<div id="middleCards"></div>
+
+<div class="buttons">
+  <button onclick="drawTrick()">Draw Trick</button>
+  <button onclick="recordMake()">Make</button>
+  <button onclick="recordMiss()">Miss</button>
+</div>
+
+<button id="newMatchBtn" onclick="newMatch()">New Match</button>
+
+<script>
+const tricks = [
+  "Lunar, .5 Flip Tap, Lunar, In",
+  "Airplane, 1.5 Swap Late Kenflip, Throw 1.5 In",
+  "Airplane, 1.5 Swap Bird, Juggle 1.5-Turn Downspike",
+  "Stunt Plane, Regular Stunt Flip Fasthand",
+  "Triple Kenflip, 3-Turn Juggle Spike",
+  "1-Turn Tap In, Inward Flip Tap 1-Turn In",
+  "Switch Swing Spike, Whirlwind",
+  "Wing Over Valley, Spike",
+  "Candlestick, Inward 1.5 Swap Ken Grip Spike",
+  "1-Turn 3-Tap, Swap Juggle Downspike",
+  "Hanging Pinch Start, Flip Cushion In",
+  "Gunslinger Handlestall, Gunslinger Spike",
+  "Inward Stilt, .5 Lighthouse, .5 Inward Stilt, In",
+  "Inward Lunar Back Flip, Trade Ken Grip Spike",
+  "Kenflip, 3-Turn Juggle, Late Kenflip Spike"
+];
+
+let availableTricks = [...tricks];
+let scoreA = 0;
+let scoreB = 0;
+let setter = "A";
+let attemptHistory = [];
+let currentTrick = null;
+let turn = "A"; // whose attempt it is
+
+function updateBorder() {
+  document.getElementById("currentTrickBox").style.borderColor = setter === "A" ? "red" : "blue";
+}
+
+function drawTrick() {
+  if (availableTricks.length === 0) return;
+  const idx = Math.floor(Math.random() * availableTricks.length);
+  currentTrick = availableTricks.splice(idx, 1)[0];
+  document.getElementById("currentTrick").innerText = currentTrick;
+  document.getElementById("setterLine").innerText = `Setter: Player ${setter}`;
+  attemptHistory = [];
+  turn = setter;
+  updateBorder();
+}
+
+function recordMake() {
+  attemptHistory.push({ player: turn, result: "make" });
+  processAttempt();
+}
+
+function recordMiss() {
+  attemptHistory.push({ player: turn, result: "miss" });
+  processAttempt();
+}
+
+function processAttempt() {
+  if (!currentTrick) return;
+
+  if (attemptHistory.length === 1) {
+    if (attemptHistory[0].result === "miss") {
+      turn = setter === "A" ? "B" : "A";
+      return;
+    }
+    turn = setter === "A" ? "B" : "A";
+    return;
+  }
+
+  if (attemptHistory.length === 2) {
+    const a1 = attemptHistory[0];
+    const a2 = attemptHistory[1];
+
+    if (a1.result === "miss" && a2.result === "make") {
+      awardPoint(turn);
+      return;
+    }
+
+    if (a1.result === "make" && a2.result === "make") {
+      turn = setter;
+      return;
+    }
+
+    middlePile(currentTrick);
+    endSet();
+    return;
+  }
+
+  if (attemptHistory.length === 3) {
+    if (attemptHistory[2].result === "make") {
+      awardPoint(turn);
+      return;
+    }
+    middlePile(currentTrick);
+    endSet();
+  }
+}
+
+function awardPoint(player) {
+  if (player === "A") scoreA++;
+  else scoreB++;
+
+  document.getElementById("scoreA").innerText = scoreA;
+  document.getElementById("scoreB").innerText = scoreB;
+
+  const pile = player === "A" ? document.getElementById("cardsA") : document.getElementById("cardsB");
+  const card = document.createElement("div");
+  card.className = "card";
+  card.innerText = currentTrick;
+  pile.appendChild(card);
+
+  endSet();
+
+  setter = setter === "A" ? "B" : "A";
+  checkWin();
+}
+
+function middlePile(cardText) {
+  const mid = document.getElementById("middleCards");
+  const card = document.createElement("div");
+  card.className = "card";
+  card.innerText = cardText;
+  mid.appendChild(card);
+}
+
+function endSet() {
+  currentTrick = null;
+  document.getElementById("currentTrick").innerText = "Draw Trick";
+}
+
+function checkWin() {
+  if (scoreA === 3 || scoreB === 3) {
+    document.getElementById("newMatchBtn").style.display = "block";
+  }
+}
+
+function newMatch() {
+  scoreA = 0;
+  scoreB = 0;
+  document.getElementById("scoreA").innerText = 0;
+  document.getElementById("scoreB").innerText = 0;
+
+  document.getElementById("cardsA").innerHTML = "";
+  document.getElementById("cardsB").innerHTML = "";
+  document.getElementById("middleCards").innerHTML = "";
+
+  availableTricks = [...tricks];
+  setter = "A";
+  turn = "A";
+  currentTrick = null;
+  attemptHistory = [];
+
+  document.getElementById("currentTrick").innerText = "Draw Trick";
+  document.getElementById("setterLine").innerText = "Setter: Player A";
+  document.getElementById("newMatchBtn").style.display = "none";
+  updateBorder();
+}
+</script>
+</body>
+</html>

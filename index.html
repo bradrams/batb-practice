@@ -209,11 +209,12 @@ function processAttempt() {
 
     if (p1 === "make" && p2 === "miss") {
       awardPoint(setter);
+      console.log('setter: ' + setter)
       return;
     }
     if (p1 === "miss" && p2 === "make") {
       awardPoint(opponent);
-      console.log(opponent);
+      console.log('opponent: ' + opponent);
       return;
     }
     if ((p1 === "make" && p2 === "make") || (p1 === "miss" && p2 === "miss")) {
@@ -244,6 +245,7 @@ function awardPoint(player) {
 
   endSet();
   setter = setter === "A" ? "B" : "A";
+  turn = turn === "A" ? "B" : "A";
   document.getElementById("setterLine").innerText = `Setter: Player ${setter}`;
   updateBorder();
   checkWin();

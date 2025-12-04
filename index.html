@@ -192,7 +192,7 @@ function processAttempt() {
   const a = attemptHistory;
   const opponent = turn === "A" ? "B" : "A";
   console.log('initial opponent: ' + opponent)
-  console.log('starting turn: ' turn)
+  console.log('starting turn: ' + turn)
   console.log('history \n' + attemptHistory)
 
   if (a.length === 1) {
@@ -201,7 +201,7 @@ function processAttempt() {
       updateStatus(`Player ${opponent} chance to match`);
       console.log('first make')
       console.log('opponent: ' + opponent)
-      console.log('turn: ' turn)
+      console.log('turn: ' + turn)
       console.log('history \n' + attemptHistory)
     } else {
       turn = opponent;
@@ -215,7 +215,7 @@ function processAttempt() {
     const p2 = a[1].result;
     onsole.log('start of second attempt')
     console.log('opponent: ' + opponent)
-    console.log('turn: ' turn)
+    console.log('turn: ' + turn)
     console.log('history \n' + attemptHistory)
 
     if (p1 === "make" && p2 === "miss") {
@@ -226,7 +226,7 @@ function processAttempt() {
     if (p1 === "miss" && p2 === "make") {
       onsole.log('miss and then a make')
       console.log('opponent: ' + opponent)
-      console.log('turn: ' turn)
+      console.log('turn: ' + turn)
       console.log('history \n' + attemptHistory)
       awardPoint(opponent);
       console.log('opponent: ' + opponent);
@@ -260,7 +260,7 @@ function awardPoint(player) {
 
   endSet();
   setter = setter === "A" ? "B" : "A";
-  turn = turn === "A" ? "B" : "A";
+  // turn = turn === "A" ? "B" : "A";
   document.getElementById("setterLine").innerText = `Setter: Player ${setter}`;
   updateBorder();
   checkWin();

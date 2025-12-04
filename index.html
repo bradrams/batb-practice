@@ -191,11 +191,18 @@ function recordMiss() {
 function processAttempt() {
   const a = attemptHistory;
   const opponent = turn === "A" ? "B" : "A";
+  console.log('initial opponent: ' + opponent)
+  console.log('starting turn: ' turn)
+  console.log('history \n' + attemptHistory)
 
   if (a.length === 1) {
     if (a[0].result === "make") {
       turn = opponent;
       updateStatus(`Player ${opponent} chance to match`);
+      console.log('first make')
+      console.log('opponent: ' + opponent)
+      console.log('turn: ' turn)
+      console.log('history \n' + attemptHistory)
     } else {
       turn = opponent;
       updateStatus(`Player ${opponent} chance for point`);
@@ -206,6 +213,10 @@ function processAttempt() {
   if (a.length === 2) {
     const p1 = a[0].result;
     const p2 = a[1].result;
+    onsole.log('start of second attempt')
+    console.log('opponent: ' + opponent)
+    console.log('turn: ' turn)
+    console.log('history \n' + attemptHistory)
 
     if (p1 === "make" && p2 === "miss") {
       awardPoint(setter);
@@ -213,6 +224,10 @@ function processAttempt() {
       return;
     }
     if (p1 === "miss" && p2 === "make") {
+      onsole.log('miss and then a make')
+      console.log('opponent: ' + opponent)
+      console.log('turn: ' turn)
+      console.log('history \n' + attemptHistory)
       awardPoint(opponent);
       console.log('opponent: ' + opponent);
       return;

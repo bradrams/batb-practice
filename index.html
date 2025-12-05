@@ -4,6 +4,77 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Kendama Open Comp Judge</title>
 <style>
+  #menuScreen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.9);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+  }
+
+  #menuScreen h1 {
+    color: white;
+    margin-bottom: 30px;
+    font-size: 32px;
+  }
+
+  .menu-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .list-button {
+    padding: 20px 50px;
+    font-size: 20px;
+    margin: 10px;
+    background: #007bff;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    min-width: 250px;
+  }
+
+  .list-button:hover {
+    background: #0056b3;
+  }
+
+  .back-button {
+    padding: 10px 30px;
+    font-size: 16px;
+    margin-top: 20px;
+    background: #6c757d;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+  }
+
+  .back-button:hover {
+    background: #5a6268;
+  }
+
+  #gameScreen {
+    display: none;
+  }
+
+  #gameScreen.active {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .hidden {
+    display: none !important;
+  }
+
   body {
     font-family: Arial, sans-serif;
     margin: 0;
@@ -78,6 +149,16 @@
   }
 
   button:active { opacity: 0.8; }
+  
+  button.cpu-thinking {
+    animation: pulse 0.8s ease-in-out;
+    pointer-events: none;
+  }
+  
+  @keyframes pulse {
+    0%, 100% { background: #28a745; transform: scale(1); }
+    50% { background: #20c997; transform: scale(1.05); }
+  }
 
   #newMatchBtn {
     margin-top: 25px;
@@ -94,6 +175,32 @@
 </head>
 <body>
 
+<div id="menuScreen">
+  <div id="modeSelect" class="menu-container">
+    <h1>Welcome! Select Game Mode</h1>
+    <button class="list-button" onclick="showDifficultyMenu('cpu')">Single Player (vs CPU)</button>
+    <button class="list-button" onclick="showDifficultyMenu('two')">Two Player</button>
+  </div>
+
+  <div id="difficultySelect" class="menu-container hidden">
+    <h1>Select Difficulty</h1>
+    <button class="list-button" onclick="showTrickList('easy')">Easy</button>
+    <button class="list-button" onclick="showTrickList('medium')">Medium</button>
+    <button class="list-button" onclick="showTrickList('hard')">Hard</button>
+    <button class="list-button" onclick="showTrickList('insane')">Insane</button>
+    <button class="back-button" onclick="backToModeSelect()">← Back</button>
+  </div>
+
+  <div id="trickListSelect" class="menu-container hidden">
+    <h1>Select Trick List</h1>
+    <button class="list-button" onclick="startGame('proOpen')">Pro Open</button>
+    <button class="list-button" onclick="startGame('top16')">Top 16</button>
+    <button class="back-button" onclick="backToDifficulty()">← Back</button>
+  </div>
+</div>
+
+<div id="gameScreen">
+
 <div class="scoreboard">
   <div class="player" id="playerABox">
     <h2>Player A</h2>
@@ -102,7 +209,7 @@
   </div>
 
   <div class="player" id="playerBBox">
-    <h2>Player B</h2>
+    <h2 id="playerBName">Player B</h2>
     <div class="score" id="scoreB">0</div>
     <div class="cards" id="cardsB"></div>
   </div>
@@ -126,9 +233,12 @@
 </div>
 
 <button id="newMatchBtn" onclick="newMatch()">New Match</button>
+<button class="back-button" onclick="backToMenu()" style="margin-top:10px;">← Back to Menu</button>
+
+</div>
 
 <script>
-const tricks = [
+const proOpenTricks = [
   "Lunar, .5 Flip Tap, Lunar, In",
   "Airplane, 1.5 Swap Late Kenflip, Throw 1.5 In",
   "Airplane, 1.5 Swap Bird, Juggle 1.5-Turn Downspike",
@@ -146,7 +256,26 @@ const tricks = [
   "Kenflip, 3-Turn Juggle, Late Kenflip Spike"
 ];
 
-let availableTricks = [...tricks];
+const top16Tricks = [
+  "Spike",
+  "Around the World",
+  "Lighthouse",
+  "Lunar",
+  "Airplane",
+  "Bird",
+  "Jumping Stick",
+  "Gunslinger",
+  "Handlestall",
+  "Kenflip",
+  "1-Turn Lighthouse",
+  "Inward Lunar",
+  "Swing Spike",
+  "Juggle Spike",
+  "Spacewalk"
+];
+
+let tricks = [];
+let availableTricks = [];
 let scoreA = 0;
 let scoreB = 0;
 let setter = "A";
@@ -154,6 +283,92 @@ let turn = "A";
 let currentTrick = null;
 let attemptHistory = [];
 let retryCount = 0;
+let gameMode = 'two'; // 'two' or 'cpu'
+let cpuDifficulty = 'easy'; // 'easy', 'medium', 'hard', 'insane'
+let cpuMakeRate = 0.3; // Default for easy
+
+function showDifficultyMenu(mode) {
+  gameMode = mode;
+  document.getElementById('modeSelect').classList.add('hidden');
+  
+  if (mode === 'cpu') {
+    document.getElementById('difficultySelect').classList.remove('hidden');
+  } else {
+    // Two player mode - skip to trick list
+    document.getElementById('trickListSelect').classList.remove('hidden');
+  }
+}
+
+function showTrickList(difficulty) {
+  cpuDifficulty = difficulty;
+  
+  // Set CPU make rates based on difficulty
+  if (difficulty === 'easy') cpuMakeRate = 0.3;
+  else if (difficulty === 'medium') cpuMakeRate = 0.5;
+  else if (difficulty === 'hard') cpuMakeRate = 0.7;
+  else if (difficulty === 'insane') cpuMakeRate = 0.9;
+  
+  document.getElementById('difficultySelect').classList.add('hidden');
+  document.getElementById('trickListSelect').classList.remove('hidden');
+}
+
+function backToModeSelect() {
+  document.getElementById('difficultySelect').classList.add('hidden');
+  document.getElementById('modeSelect').classList.remove('hidden');
+}
+
+function backToDifficulty() {
+  document.getElementById('trickListSelect').classList.add('hidden');
+  document.getElementById('difficultySelect').classList.remove('hidden');
+}
+
+function backToMenu() {
+  // Reset game state
+  scoreA = 0;
+  scoreB = 0;
+  setter = "A";
+  turn = "A";
+  availableTricks = [...tricks];
+  attemptHistory = [];
+  retryCount = 0;
+  currentTrick = null;
+
+  document.getElementById("scoreA").innerText = 0;
+  document.getElementById("scoreB").innerText = 0;
+  document.getElementById("cardsA").innerHTML = "";
+  document.getElementById("cardsB").innerHTML = "";
+  document.getElementById("middleCards").innerHTML = "";
+  document.getElementById("newMatchBtn").style.display = "none";
+  
+  // Hide game screen and show menu
+  document.getElementById('gameScreen').classList.remove('active');
+  document.getElementById('menuScreen').style.display = 'flex';
+  document.getElementById('trickListSelect').classList.add('hidden');
+  document.getElementById('difficultySelect').classList.add('hidden');
+  document.getElementById('modeSelect').classList.remove('hidden');
+}
+
+function startGame(listType) {
+  if (listType === 'proOpen') {
+    tricks = [...proOpenTricks];
+  } else if (listType === 'top16') {
+    tricks = [...top16Tricks];
+  }
+  
+  availableTricks = [...tricks];
+  
+  // Update Player B name if CPU mode
+  if (gameMode === 'cpu') {
+    document.getElementById('playerBName').innerText = `CPU (${cpuDifficulty.charAt(0).toUpperCase() + cpuDifficulty.slice(1)})`;
+  } else {
+    document.getElementById('playerBName').innerText = 'Player B';
+  }
+  
+  document.getElementById('menuScreen').style.display = 'none';
+  document.getElementById('gameScreen').classList.add('active');
+  updateBorder();
+  updateStatus("Draw a trick to begin");
+}
 
 function updateBorder() {
   document.getElementById("currentTrickBox").style.borderColor = setter === "A" ? "red" : "blue";
@@ -169,13 +384,22 @@ function drawTrick() {
   currentTrick = availableTricks.splice(idx, 1)[0];
 
   document.getElementById("currentTrick").innerText = currentTrick;
-  document.getElementById("setterLine").innerText = `Setter: Player ${setter}`;
+  document.getElementById("setterLine").innerText = `Setter: ${gameMode === 'cpu' && setter === 'B' ? 'CPU' : 'Player ' + setter}`;
 
   attemptHistory = [];
   retryCount = 0;
   turn = setter;
   updateBorder();
-  updateStatus(`Player ${setter} chance to set`);
+  const statusMsg = gameMode === 'cpu' && setter === 'B' ? 
+    `CPU chance to set` : `Player ${setter} chance to set`;
+  updateStatus(statusMsg);
+  
+  // Trigger CPU attempt with delay if it's CPU's turn to set
+  if (gameMode === 'cpu' && turn === 'B') {
+    setTimeout(() => {
+      cpuAttempt();
+    }, 500);
+  }
 }
 
 function recordMake() {
@@ -190,6 +414,26 @@ function recordMiss() {
   processAttempt();
 }
 
+function cpuAttempt() {
+  if (!currentTrick || gameMode !== 'cpu' || turn !== 'B') return;
+  
+  // CPU makes decision based on difficulty
+  const madeIt = Math.random() < cpuMakeRate;
+  
+  // Highlight the button the CPU will "press"
+  const buttonToHighlight = madeIt ? document.querySelector('button[onclick="recordMake()"]') : document.querySelector('button[onclick="recordMiss()"]');
+  buttonToHighlight.classList.add('cpu-thinking');
+  
+  setTimeout(() => {
+    buttonToHighlight.classList.remove('cpu-thinking');
+    if (madeIt) {
+      recordMake();
+    } else {
+      recordMiss();
+    }
+  }, 800); // Small delay to make it feel more natural
+}
+
 function processAttempt() {
   const a = attemptHistory;
   const opponentOfSetter = setter === "A" ? "B" : "A";
@@ -198,10 +442,21 @@ function processAttempt() {
     const nextPlayer = turn === "A" ? "B" : "A";
     if (a[0].result === "make") {
       turn = nextPlayer;
-      updateStatus(`Player ${nextPlayer} chance to match`);
+      const statusMsg = gameMode === 'cpu' && nextPlayer === 'B' ? 
+        `CPU chance to match` : `Player ${nextPlayer} chance to match`;
+      updateStatus(statusMsg);
     } else {
       turn = nextPlayer;
-      updateStatus(`Player ${nextPlayer} chance for point`);
+      const statusMsg = gameMode === 'cpu' && nextPlayer === 'B' ? 
+        `CPU chance for point` : `Player ${nextPlayer} chance for point`;
+      updateStatus(statusMsg);
+    }
+    
+    // Trigger CPU attempt with delay if it's CPU's turn
+    if (gameMode === 'cpu' && turn === 'B') {
+      setTimeout(() => {
+        cpuAttempt();
+      }, 500);
     }
     return;
   }
@@ -243,9 +498,18 @@ function retrySet() {
     document.getElementById("setterLine").innerText = `Setter: Player ${setter}`;
     updateBorder();
   } else {
-    updateStatus(`Player ${setter} chance to set`);
+    const statusMsg = gameMode === 'cpu' && setter === 'B' ? 
+      `CPU chance to set` : `Player ${setter} chance to set`;
+    updateStatus(statusMsg);
     attemptHistory = [];
     turn = setter;
+    
+    // Trigger CPU attempt with delay if it's CPU's turn to set
+    if (gameMode === 'cpu' && turn === 'B') {
+      setTimeout(() => {
+        cpuAttempt();
+      }, 500);
+    }
   }
 }
 

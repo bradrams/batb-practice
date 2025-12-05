@@ -153,6 +153,7 @@ let setter = "A";
 let turn = "A";
 let currentTrick = null;
 let attemptHistory = [];
+let retryCount = 0;
 
 function updateBorder() {
   document.getElementById("currentTrickBox").style.borderColor = setter === "A" ? "red" : "blue";
@@ -171,6 +172,7 @@ function drawTrick() {
   document.getElementById("setterLine").innerText = `Setter: Player ${setter}`;
 
   attemptHistory = [];
+  retryCount = 0;
   turn = setter;
   updateBorder();
   updateStatus(`Player ${setter} chance to set`);
@@ -224,9 +226,27 @@ function processAttempt() {
 }
 
 function retrySet() {
-  updateStatus(`Player ${setter} chance to set`);
-  attemptHistory = [];
-  turn = setter;
+  retryCount++;
+  
+  if (retryCount >= 3) {
+    // Trick is nulled - place in middle
+    const middleDiv = document.getElementById("middleCards");
+    const card = document.createElement("div");
+    card.className = "card";
+    card.innerText = currentTrick;
+    card.style.display = "inline-block";
+    card.style.margin = "5px";
+    middleDiv.appendChild(card);
+    
+    endSet();
+    setter = setter === "A" ? "B" : "A";
+    document.getElementById("setterLine").innerText = `Setter: Player ${setter}`;
+    updateBorder();
+  } else {
+    updateStatus(`Player ${setter} chance to set`);
+    attemptHistory = [];
+    turn = setter;
+  }
 }
 
 function awardPoint(player) {
@@ -267,6 +287,7 @@ function newMatch() {
   turn = "A";
   availableTricks = [...tricks];
   attemptHistory = [];
+  retryCount = 0;
   currentTrick = null;
 
   document.getElementById("scoreA").innerText = 0;

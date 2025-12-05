@@ -224,8 +224,11 @@
 
 <div class="buttons">
   <button onclick="drawTrick()">Draw Trick</button>
-  <button onclick="recordMake()">Make</button>
-  <button onclick="recordMiss()">Miss</button>
+  <button id="makeBtn" onclick="recordMake()">Make</button>
+  <button id="missBtn" onclick="recordMiss()">Miss</button>
+  <button id="playerAPointBtn" class="hidden" onclick="quickPoint('A')">Player A Point</button>
+  <button id="playerBPointBtn" class="hidden" onclick="quickPoint('B')">Player B Point</button>
+  <button id="nullBtn" class="hidden" onclick="quickNull()">Null</button>
 </div>
 
 <div id="statusText" style="margin-top:10px; font-size:18px; font-weight:bold;">
@@ -357,17 +360,32 @@ function startGame(listType) {
   
   availableTricks = [...tricks];
   
-  // Update Player B name if CPU mode
+  // Update Player B name and buttons based on mode
   if (gameMode === 'cpu') {
     document.getElementById('playerBName').innerText = `CPU (${cpuDifficulty.charAt(0).toUpperCase() + cpuDifficulty.slice(1)})`;
+    document.getElementById('makeBtn').classList.remove('hidden');
+    document.getElementById('missBtn').classList.remove('hidden');
+    document.getElementById('playerAPointBtn').classList.add('hidden');
+    document.getElementById('playerBPointBtn').classList.add('hidden');
+    document.getElementById('nullBtn').classList.add('hidden');
   } else {
     document.getElementById('playerBName').innerText = 'Player B';
+    document.getElementById('makeBtn').classList.add('hidden');
+    document.getElementById('missBtn').classList.add('hidden');
+    document.getElementById('playerAPointBtn').classList.remove('hidden');
+    document.getElementById('playerBPointBtn').classList.remove('hidden');
+    document.getElementById('nullBtn').classList.remove('hidden');
   }
   
   document.getElementById('menuScreen').style.display = 'none';
   document.getElementById('gameScreen').classList.add('active');
   updateBorder();
-  updateStatus("Draw a trick to begin");
+  
+  if (gameMode === 'cpu') {
+    updateStatus("Draw a trick to begin");
+  } else {
+    updateStatus("");
+  }
 }
 
 function updateBorder() {
@@ -390,16 +408,43 @@ function drawTrick() {
   retryCount = 0;
   turn = setter;
   updateBorder();
-  const statusMsg = gameMode === 'cpu' && setter === 'B' ? 
-    `CPU chance to set` : `Player ${setter} chance to set`;
-  updateStatus(statusMsg);
   
-  // Trigger CPU attempt with delay if it's CPU's turn to set
-  if (gameMode === 'cpu' && turn === 'B') {
-    setTimeout(() => {
-      cpuAttempt();
-    }, 500);
+  if (gameMode === 'cpu') {
+    const statusMsg = setter === 'B' ? `CPU chance to set` : `Player ${setter} chance to set`;
+    updateStatus(statusMsg);
+    
+    // Trigger CPU attempt with delay if it's CPU's turn to set
+    if (turn === 'B') {
+      setTimeout(() => {
+        cpuAttempt();
+      }, 500);
+    }
+  } else {
+    // Two player mode - clear status text
+    updateStatus("");
   }
+}
+
+function quickPoint(player) {
+  if (!currentTrick || gameMode !== 'two') return;
+  awardPoint(player);
+}
+
+function quickNull() {
+  if (!currentTrick || gameMode !== 'two') return;
+  
+  const middleDiv = document.getElementById("middleCards");
+  const card = document.createElement("div");
+  card.className = "card";
+  card.innerText = currentTrick;
+  card.style.display = "inline-block";
+  card.style.margin = "5px";
+  middleDiv.appendChild(card);
+  
+  endSet();
+  setter = setter === "A" ? "B" : "A";
+  document.getElementById("setterLine").innerText = `Setter: Player ${setter}`;
+  updateBorder();
 }
 
 function recordMake() {
@@ -536,7 +581,12 @@ function awardPoint(player) {
 function endSet() {
   currentTrick = null;
   document.getElementById("currentTrick").innerText = "Draw Trick";
-  updateStatus("Draw trick to begin");
+  
+  if (gameMode === 'cpu') {
+    updateStatus("Draw trick to begin");
+  } else {
+    updateStatus("Draw trick");
+  }
 }
 
 function checkWin() {

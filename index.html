@@ -193,6 +193,10 @@
 
   <div id="trickListSelect" class="menu-container hidden">
     <h1>Select Trick List</h1>
+    <button class="list-button" onclick="startGame('beginnerOpen')">Beginner Open</button>
+    <button class="list-button" onclick="startGame('intermediateOpen')">Intermediate Open</button>
+    <button class="list-button" onclick="startGame('advancedOpen')">Advanced Open</button>
+    <button class="list-button" onclick="startGame('amOpen')">Am Open</button>
     <button class="list-button" onclick="startGame('proOpen')">Pro Open</button>
     <button class="list-button" onclick="startGame('top16')">Top 16</button>
     <button class="back-button" onclick="backToDifficulty()">← Back</button>
@@ -260,21 +264,78 @@ const proOpenTricks = [
 ];
 
 const top16Tricks = [
-"1-Turn Tap Swap Juggle Late Gunslinger, Juggle Throw Tap, Juggle Spike",
-"Quad Lunar Flip, In",
-"3-Tap Juggle Bird, Juggle Spike",
-"6-Tap, Juggle Spike",
-"Bird, Stilt, Inward Stilt, Swap Nightingale, Spike",
-"1-Turn Cushion Tap Swap Late Kenflip Spike",
-"Inward Throw Swap Tap 3-Turn Swap, Juggle Spike",
-"Regular Stilt Barrel Roll, In",
-"Inward Gooncircle, Spike",
-".5 Juggle Candle, .5 Juggle Ken, Juggle Spike",
-"Bird, 3-Turn Juggle Bird, Spike",
-"Kenflip, Late Ken, Late Ken Spike",
-"Inward Lunar, Flip Spike Tap 3-Turn Inward Lunar, In",
-"Lunar, Double Lunar Tré Flip, In",
-"Stunt Plane Fasthand Juggle Ghost Stunt Plane Fasthand"
+  "Spike",
+  "Around the World",
+  "Lighthouse",
+  "Lunar",
+  "Airplane",
+  "Bird",
+  "Jumping Stick",
+  "Gunslinger",
+  "Handlestall",
+  "Kenflip",
+  "1-Turn Lighthouse",
+  "Inward Lunar",
+  "Swing Spike",
+  "Juggle Spike",
+  "Spacewalk"
+];
+
+const beginnerOpenTricks = [
+  "Sara Grip Moshikame x 5",
+  "Ken Grip Big Cup Spike",
+  "Candlestick Grip Bottom Cup",
+  "Ken Grip Big Cup, Orbit Big Cup",
+  "Ken Grip Around Japan",
+  "Sara Grip Around the Block",
+  "Swing Spike",
+  "Airplane",
+  "Sara Grip Big Cup, Clack, Big Cup",
+  "Lighthouse, In"
+];
+
+const intermediateOpenTricks = [
+  "Around Europe",
+  "Airplane, Jumping Stick",
+  "One Turn Lighthouse, Trade Ken Grip Spike",
+  "Big Cup, Juggle Big Cup, Spike",
+  "Stunt Plane",
+  "Hanging Pinch Start, In (Tama Grip Finish)",
+  "Downspike",
+  "Lunar, In",
+  "Nightingale, Spike",
+  "Swing Spike, Whirlwind"
+];
+
+const advancedOpenTricks = [
+  "Inward Lunar, Inward Lunar Flip, Flip In",
+  "Airplane, 1.5 Swap Spike",
+  "1-Turn Lighthouse, 1-Turn Swap Spike",
+  "Double Gunslinger Spike",
+  "Stilt, Flip In",
+  "Spacewalk Swap Spike",
+  "Stunt Plane Fasthand, Whirlwind",
+  "Juggle Spike",
+  "Bird Over the Valley, Flip In (Tama Grip Finish)",
+  "Candlestick Bottom Cup, Swap Ken Grip Spike"
+];
+
+const amOpenTricks = [
+  "Handlestall, Ringstall, Spike",
+  "1-Turn Tap Juggle Spike",
+  "Stilt, Over the Valley, In",
+  "Airplane, Triple Jumping Stick",
+  "Switch Lighthouse, In",
+  "Airplane, Cushion Tap In",
+  "Lunar, Lunar Barrel Roll, In",
+  "Lightning Drop In",
+  "Wing, Spike",
+  "Inward Gunslinger Downspike",
+  "Downspike, Juggle Downspike",
+  "Candlestick Flip, Trade Ken Grip Spike",
+  "Underbird Nod-Off, Flip In (Tama Grip Finish)",
+  "Stunt Plane, Inward Stunt Flip",
+  "1-Turn Tap Lighthouse, Flip Tap Lighthouse, In"
 ];
 
 let tricks = [];
@@ -331,7 +392,8 @@ function backToMenu() {
   scoreB = 0;
   setter = "A";
   turn = "A";
-  availableTricks = [...tricks];
+  tricks = [];
+  availableTricks = [];
   attemptHistory = [];
   retryCount = 0;
   currentTrick = null;
@@ -341,6 +403,8 @@ function backToMenu() {
   document.getElementById("cardsA").innerHTML = "";
   document.getElementById("cardsB").innerHTML = "";
   document.getElementById("middleCards").innerHTML = "";
+  document.getElementById("currentTrick").innerText = "Press Draw Trick";
+  document.getElementById("setterLine").innerText = "Setter: Player A";
   document.getElementById("newMatchBtn").style.display = "none";
   
   // Hide game screen and show menu
@@ -356,6 +420,14 @@ function startGame(listType) {
     tricks = [...proOpenTricks];
   } else if (listType === 'top16') {
     tricks = [...top16Tricks];
+  } else if (listType === 'beginnerOpen') {
+    tricks = [...beginnerOpenTricks];
+  } else if (listType === 'intermediateOpen') {
+    tricks = [...intermediateOpenTricks];
+  } else if (listType === 'advancedOpen') {
+    tricks = [...advancedOpenTricks];
+  } else if (listType === 'amOpen') {
+    tricks = [...amOpenTricks];
   }
   
   availableTricks = [...tricks];
